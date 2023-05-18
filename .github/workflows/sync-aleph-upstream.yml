@@ -1,0 +1,19 @@
+name: sync with aleph upstream
+
+on:
+  schedule:
+    - cron: "23 23 * * 2" # This will run the workflow at 4:00 PM Pacific Time every Tuesday
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Sync
+        run: |
+          git remote add upstream git@github.com:alephdata/aleph.git
+          git fetch upstream
+          git checkout main
+          git merge upstream/main --no-edit
+          git push origin main
