@@ -24,17 +24,17 @@ jobs:
         run: |
           sudo sysctl -w vm.max_map_count=262144
           sudo echo "ALEPH_SECRET=batman\n" >> aleph.env
-          echo "${{ GITHUB_REF }}"
+          echo "${{ github.ref }}"
           docker --version
           docker-compose --version
 
       - name: Docker pull services
         run: |
           docker-compose pull --parallel --quiet elasticsearch convert-document ingest-file
-          make ALEPH_TAG=${{ GITHUB_SHA }} services
+          make ALEPH_TAG=${{ github.sha }} services
 
       - name: Build docker image
-        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ GITHUB_SHA }} .
+        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
 
       - name: Install development dependencies
         run: make dev
@@ -46,21 +46,21 @@ jobs:
         run: make lint
 
       - name: Run aleph tests
-        run: make ALEPH_TAG=${{ GITHUB_SHA }} test
+        run: make ALEPH_TAG=${{ github.sha }} test
 
       - name: Push docker image (hash)
         env:
           GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         if: env.GITHUB_PASSWORD != null
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ GITHUB_ACTOR }} --password-stdin
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ GITHUB_SHA }}
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Push docker images for tags
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         run: |
-          export ALEPH_TAG=${GITHUB_REF/refs\/tags\//}
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ GITHUB_SHA }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ALEPH_TAG};
+          export ALEPH_TAG=${{github.ref/refs\/tags\//}}
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ALEPH_TAG};
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${ALEPH_TAG};
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ GITHUB_SHA }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest;
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest;
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest;
