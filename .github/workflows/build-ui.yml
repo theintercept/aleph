@@ -2,6 +2,7 @@ name: Build UI
 
 on:
   push:
+    branches: ['release', 'main']
     paths-ignore:
       - "aleph/**"
       - "contrib/**"
