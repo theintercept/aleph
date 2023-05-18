@@ -10,6 +10,10 @@ on:
       - "site/**"
       - "docs/**"
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 permissions:
   packages: write
 
@@ -24,8 +28,8 @@ jobs:
 
       - name: Build development image
         run: |
-          docker build -t ghcr.io/alephdata/aleph-ui:${GITHUB_SHA} ui
-          docker tag ghcr.io/alephdata/aleph-ui:${GITHUB_SHA} ghcr.io/alephdata/aleph-ui:latest
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:${{ GITHUB_SHA }} ui
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:${{ GITHUB_SHA }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:latest
 
       - name: Check code formatting
         run: make format-check-ui
@@ -37,21 +41,21 @@ jobs:
         run: make test-ui
 
       - name: Build production image
-        run: docker build -t ghcr.io/alephdata/aleph-ui-production:${GITHUB_SHA} -f ui/Dockerfile.production ui
+        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ GITHUB_SHA }} -f ui/Dockerfile.production ui
 
       - name: Push docker image (hash)
         env:
           GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         if: env.GITHUB_PASSWORD != null
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin 
-          docker push ghcr.io/alephdata/aleph-ui-production:${GITHUB_SHA}
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ GITHUB_ACTOR }} --password-stdin
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ GITHUB_SHA }}
 
       - name: Push docker image (tagged)
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         run: |
-          export ALEPH_TAG=${GITHUB_REF/refs\/tags\//}
-          docker tag ghcr.io/alephdata/aleph-ui-production:${GITHUB_SHA} ghcr.io/alephdata/aleph-ui-production:${ALEPH_TAG};
-          docker push ghcr.io/alephdata/aleph-ui-production:${ALEPH_TAG};
-          docker tag ghcr.io/alephdata/aleph-ui-production:${GITHUB_SHA} ghcr.io/alephdata/aleph-ui-production:latest;
-          docker push ghcr.io/alephdata/aleph-ui-production:latest;
+          export ALEPH_TAG=${{ GITHUB_REF/refs\/tags\// }}
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ GITHUB_SHA }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ ALEPH_TAG }};
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ ALEPH_TAG }};
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ GITHUB_SHA }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:latest;
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:latest;
