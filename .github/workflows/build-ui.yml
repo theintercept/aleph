@@ -28,8 +28,8 @@ jobs:
 
       - name: Build development image
         run: |
-          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:${{ github.sha } ui
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:${{ github.sha } ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:latest
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:${{ github.sha }} ui
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui:latest
 
       - name: Check code formatting
         run: make format-check-ui
@@ -41,7 +41,7 @@ jobs:
         run: make test-ui
 
       - name: Build production image
-        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha } -f ui/Dockerfile.production ui
+        run: docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha }} -f ui/Dockerfile.production ui
 
       - name: Push docker image (hash)
         env:
@@ -49,13 +49,13 @@ jobs:
         if: env.GITHUB_PASSWORD != null
         run: |
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha }
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha }}
 
       - name: Push docker image (tagged)
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         run: |
           export ALEPH_TAG=${{ GITHUB_REF/refs\/tags\// }}
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha } ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ ALEPH_TAG }};
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ ALEPH_TAG }};
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ ALEPH_TAG }};
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha } ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:latest;
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:latest;
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-ui-production:latest;
